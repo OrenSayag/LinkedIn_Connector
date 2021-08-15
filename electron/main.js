@@ -1,12 +1,13 @@
-const { app, BrowserWindow } = require("electron");
-const { theSocialButterfly } = require("./puppeteer");
+const { app, BrowserWindow, dialog } = require("electron");
+const { theSocialButterfly, messageToClient } = require("../public/puppeteer");
 const { ipcMain } = require("electron");
+const path = require("path");
 
 function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 1000,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -15,16 +16,40 @@ function createWindow() {
 
   ipcMain.on("anything-asynchronous", (event, obj) => {
     console.log("heyyyy", obj); // prints "heyyyy ping"
-    
-    theSocialButterfly(obj.mailOrPhone, obj.password, obj.keyword)
+
+    theSocialButterfly(obj.mailOrPhone, obj.password, obj.keyword);
     event.reply("asynchronous-reply", "pong");
   });
 
+  messageToClient.on("message", (data) => {
+    // dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'] })
+    // (()=> dialog.showMessageBox({
+    //     type:'info',
+    //     title:'Errpr',
+    //     message:data,
+    //     buttons:['Howdy?','Alright']
+    // }))()
+
+    console.log(data);
+    win.webContents.send("message", { msg: data });
+  });
+  
+  messageToClient.on("restart", (data)=>{
+    win.webContents.send("restart", {  });
+  })
+  
+  messageToClient.on("countup", ()=>{
+    
+    win.webContents.send("countup", { msg:"countup" });
+  })
+
+
   //load the index.html from a url
-  win.loadURL("http://localhost:3000");
+  // win.loadURL("http://localhost:3000");
+  win.loadURL(`file://${path.join(__dirname, "../build/index.html")}`);
 
   // Open the DevTools.
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 // This method will be called when Electron has finished
